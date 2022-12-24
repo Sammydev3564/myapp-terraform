@@ -95,27 +95,31 @@ ingress {
   }
 
 }
-data "aws_ami" "latest-amazon-ubuntu" {
-  most_recent      = true
-  owners           = ["amazon"]
+
+data "aws_ami" "myapp-server" {
+  most_recent = true
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-*-20221201"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
   }
-    filter {
-    name   = "root-device-type"
-    values = ["ebs"]
-  }
-  
+
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
   }
-}
 
-resource "aws_instance" "myapp-server" {
-  ami           = data.aws_ami.latest-amazon-ubuntu.id
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+
+  owners = ["099720109477"] # Canonical official
+}
+  
+  resource "aws_instance" "myapp-server" {
+  ami           = data.aws_ami.myapp-server.id 
+
   instance_type = var.instance_type
   subnet_id = aws_subnet.myapp-subnet-1.id
   vpc_security_group_ids = [aws_security_group.myapp-sg.id]
@@ -125,10 +129,7 @@ resource "aws_instance" "myapp-server" {
 tags = {
     Name = "${var.env_prefix}-websever"}
 }
-
-output "aws_ami_id" {
-  value = data.aws_ami.latest-amazon-ubuntu.id
-}
+  
 resource "aws_key_pair" "ssh-key" {
   key_name   = "ssh-key"
   public_key =var.public_key
